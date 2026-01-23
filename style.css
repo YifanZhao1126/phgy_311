@@ -35,6 +35,40 @@ body {
     font-size: 12px;
     color: #666666;
     font-style: italic;
+    margin-bottom: 15px;
+}
+
+.tab-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.tab-button {
+    padding: 10px 20px;
+    background-color: #e8e8e8;
+    border: 1px solid #999999;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.tab-button:hover {
+    background-color: #d4d4d4;
+}
+
+.tab-button.active {
+    background-color: #ffffff;
+    border-bottom: 2px solid #4CAF50;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
 }
 
 .main-container {
@@ -178,6 +212,15 @@ body {
     height: 100%;
 }
 
+.plot-grid-2x2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 15px;
+    height: calc(100vh - 200px);
+    max-height: 700px;
+}
+
 .plot-item {
     border: 1px solid #000000;
     padding: 15px 10px 10px 15px;
@@ -196,6 +239,18 @@ body {
     width: 100% !important;
     height: 220px !important;
     background-color: #ffffff;
+}
+
+.plot-grid-2x2 .plot-item {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.plot-grid-2x2 .plot-item canvas {
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 280px;
 }
 
 @media (max-width: 768px) {

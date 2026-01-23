@@ -1,4 +1,5 @@
 import { Chart, registerables } from 'chart.js';
+import './style.css';
 Chart.register(...registerables);
 
 class STDPSimulation {
@@ -7,8 +8,6 @@ class STDPSimulation {
         this.hasSpare = false;
         this.spare = 0;
         this.charts = {};
-        // MATLAB's default random seed behavior
-        this.matlabSeed = 0; // MATLAB default 
         this.initializeCharts();
         this.bindEvents();
     }
@@ -117,12 +116,9 @@ class STDPSimulation {
         buttons.forEach(id => document.getElementById(id).disabled = false);
     }
 
-    // MATLAB-compatible random number generator
-    // Using same algorithm as MATLAB's default rand() function
+    // Use native JavaScript random - Math.random() is fast enough for simulations
     matlabRand() {
-        // Simple linear congruential generator matching MATLAB's behavior
-        this.matlabSeed = (this.matlabSeed * 134775813 + 1) % Math.pow(2, 32);
-        return this.matlabSeed / Math.pow(2, 32);
+        return Math.random();
     }
 
     generateGaussianRandom() {
@@ -140,10 +136,9 @@ class STDPSimulation {
 
     // Direct translation of MATLAB simSTDP2 function
     async runSelectivitySimulation(conditionNumber, params) {
-        // Reset to MATLAB's default seed behavior
-        this.matlabSeed = 0;
+        // Reset Gaussian spare for each run
         this.hasSpare = false;
-        
+
         // Adjust parameters for condition 3 like in MATLAB
         if (conditionNumber === 3) {
             params.gmax = 0.015 * 125; // 1.875
@@ -162,27 +157,20 @@ class STDPSimulation {
         document.getElementById('status').textContent = `Running ${conditionNames[conditionNumber]}...`;
         
         // Set up correlation identifiers based on condition
-        // DEBUG: Let's check what MATLAB actually does
-        console.log('Before setting corri, conditionNumber:', conditionNumber);
         const corri = new Array(params.N).fill(0);
         if (conditionNumber === 2) {
-            // MATLAB: corri(1:end/2) = 1; (first half)
             for (let i = 0; i < params.N / 2; i++) {
                 corri[i] = 1;
             }
-            console.log('Condition 2: First 50 neurons set to corri=1');
         }
         if (conditionNumber === 3) {
-            // MATLAB: corri(1:end/2) = 1; corri(end/2+1:end) = 2;
             for (let i = 0; i < params.N / 2; i++) {
                 corri[i] = 1;
             }
             for (let i = Math.floor(params.N / 2); i < params.N; i++) {
                 corri[i] = 2;
             }
-            console.log('Condition 3: First 50 = corri=1, Last 50 = corri=2');
         }
-        console.log('Corri setup:', corri.slice(0, 10), '...', corri.slice(-10));
         
         // Direct MATLAB translation starts here
         let V = params.Vrest;
@@ -351,19 +339,19 @@ class STDPSimulation {
                 g[i] = Math.max(Math.min(g[i], params.gmax), 0);
             }
             
-            if (t % 10000 === 0) {
+            if (t % 50000 === 0) {
                 const progress = (t / params.stime) * 100;
                 document.getElementById('progressBar').style.width = `${progress}%`;
                 document.getElementById('status').textContent = `${conditionNames[conditionNumber]}: ${Math.round(progress)}%`;
-                
+
                 const weightsData = g.map((w, i) => ({
                     x: i,
                     y: w / params.gmax
                 }));
                 this.charts.current.data.datasets[0].data = weightsData;
                 this.charts.current.update('none');
-                
-                await new Promise(resolve => setTimeout(resolve, 1));
+
+                await new Promise(resolve => setTimeout(resolve, 0));
             }
         }
         
@@ -372,13 +360,6 @@ class STDPSimulation {
             x: i,
             y: w / params.gmax
         }));
-        
-        // DEBUG: Check final weights pattern
-        console.log(`Final weights for condition ${conditionNumber}:`);
-        console.log('First 10 weights:', g.slice(0, 10).map(w => (w/params.gmax).toFixed(3)));
-        console.log('Last 10 weights:', g.slice(-10).map(w => (w/params.gmax).toFixed(3)));
-        console.log('Average first half:', (g.slice(0, 50).reduce((a,b) => a+b, 0)/50/params.gmax).toFixed(3));
-        console.log('Average last half:', (g.slice(50, 100).reduce((a,b) => a+b, 0)/50/params.gmax).toFixed(3));
         
         this.charts[`condition${conditionNumber}`].data.datasets[0].data = finalWeightsData;
         this.charts[`condition${conditionNumber}`].update();
@@ -395,7 +376,356 @@ class STDPSimulation {
     }
 }
 
-// Initialize the simulation when the page loads
+class Figure4Simulation {
+    constructor() {
+        this.isRunning = false;
+        this.hasSpare = false;
+        this.spare = 0;
+        this.charts = {};
+        this.chartsInitialized = false;
+        this.bindEvents();
+    }
+
+    initializeCharts() {
+        if (this.chartsInitialized) return;
+        this.chartsInitialized = true;
+        const weightsOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: { title: { display: true, text: 'Latency (ms)' }, min: -55, max: 55 },
+                y: { title: { display: true, text: 'g/g_max' }, min: 0, max: 1 }
+            }
+        };
+
+        const voltageOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: { title: { display: true, text: 'Time (ms)' }, min: -50, max: 50 },
+                y: { title: { display: true, text: 'Voltage (mV)' } }
+            }
+        };
+
+        // Initial weights chart
+        const initWeightsCtx = document.getElementById('f4_initialWeights').getContext('2d');
+        this.charts.initialWeights = new Chart(initWeightsCtx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    data: [],
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    borderColor: 'black',
+                    borderWidth: 1,
+                    pointRadius: 2
+                }]
+            },
+            options: weightsOptions
+        });
+
+        // Initial voltage chart
+        const initVoltageCtx = document.getElementById('f4_initialVoltage').getContext('2d');
+        this.charts.initialVoltage = new Chart(initVoltageCtx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    data: [],
+                    borderColor: 'black',
+                    borderWidth: 1,
+                    fill: false,
+                    pointRadius: 0,
+                    showLine: true
+                }]
+            },
+            options: voltageOptions
+        });
+
+        // Current weights chart
+        const currWeightsCtx = document.getElementById('f4_currentWeights').getContext('2d');
+        this.charts.currentWeights = new Chart(currWeightsCtx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    data: [],
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    borderColor: 'black',
+                    borderWidth: 1,
+                    pointRadius: 2
+                }]
+            },
+            options: weightsOptions
+        });
+
+        // Current voltage chart
+        const currVoltageCtx = document.getElementById('f4_currentVoltage').getContext('2d');
+        this.charts.currentVoltage = new Chart(currVoltageCtx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    data: [],
+                    borderColor: 'black',
+                    borderWidth: 1,
+                    fill: false,
+                    pointRadius: 0,
+                    showLine: true
+                }]
+            },
+            options: voltageOptions
+        });
+    }
+
+    bindEvents() {
+        document.getElementById('runFigure4').addEventListener('click', () => {
+            this.runSimulation();
+        });
+        document.getElementById('stopFigure4').addEventListener('click', () => {
+            this.stopSimulation();
+        });
+    }
+
+    getParameters() {
+        return {
+            N: parseInt(document.getElementById('f4_N').value),
+            tau_ltp: parseFloat(document.getElementById('f4_tau_ltp').value),
+            tau_ltd: parseFloat(document.getElementById('f4_tau_ltp').value),
+            A_ltp: parseFloat(document.getElementById('f4_A_ltp').value),
+            A_ltd: parseFloat(document.getElementById('f4_A_ltp').value) * parseFloat(document.getElementById('f4_B').value),
+            gmax: parseFloat(document.getElementById('f4_gmax').value),
+            Vrest: parseFloat(document.getElementById('f4_Vrest').value),
+            Vth: parseFloat(document.getElementById('f4_Vth').value),
+            tau_m: parseFloat(document.getElementById('f4_tau_m').value),
+            tau_ex: parseFloat(document.getElementById('f4_tau_ex').value),
+            Eex: parseFloat(document.getElementById('f4_Eex').value),
+            ttimes: parseInt(document.getElementById('f4_ttimes').value),
+            latency_std: parseFloat(document.getElementById('f4_latency_std').value),
+            burstdur: parseFloat(document.getElementById('f4_burstdur').value),
+            burstrate: parseFloat(document.getElementById('f4_burstrate').value)
+        };
+    }
+
+    matlabRand() {
+        return Math.random();
+    }
+
+    generateGaussianRandom() {
+        if (this.hasSpare) {
+            this.hasSpare = false;
+            return this.spare;
+        }
+        this.hasSpare = true;
+        const u = this.matlabRand();
+        const v = this.matlabRand();
+        const mag = Math.sqrt(-2.0 * Math.log(u));
+        this.spare = mag * Math.cos(2.0 * Math.PI * v);
+        return mag * Math.sin(2.0 * Math.PI * v);
+    }
+
+    async runSimulation() {
+        if (this.isRunning) return;
+
+        // Initialize charts if not done yet
+        this.initializeCharts();
+
+        this.isRunning = true;
+        document.getElementById('runFigure4').disabled = true;
+        document.getElementById('f4_status').textContent = 'Initializing...';
+
+        const params = this.getParameters();
+
+        try {
+            await this.runLatencySimulation(params);
+        } catch (error) {
+            console.error('Simulation error:', error);
+            document.getElementById('f4_status').textContent = 'Error occurred';
+        }
+
+        this.isRunning = false;
+        document.getElementById('runFigure4').disabled = false;
+    }
+
+    async runLatencySimulation(params) {
+        this.hasSpare = false;
+
+        const dt = 1;
+        const int_start = -50;
+        const int_end = 50;
+        const int_length = int_end - int_start + 1;
+
+        // Generate latencies with Gaussian distribution (15ms std dev)
+        const latencies = new Array(params.N);
+        for (let i = 0; i < params.N; i++) {
+            latencies[i] = this.generateGaussianRandom() * params.latency_std;
+        }
+
+        // Initialize conductances
+        const g = new Array(params.N).fill(0.003);
+        const firingp = 1 - Math.exp(-params.burstrate * 0.001);
+
+        // Plot initial weights
+        const initialWeightsData = latencies.map((lat, i) => ({
+            x: lat,
+            y: g[i] / params.gmax
+        }));
+        this.charts.initialWeights.data.datasets[0].data = initialWeightsData;
+        this.charts.initialWeights.update('none');
+
+        // Main simulation loop
+        for (let xx = 1; xx <= params.ttimes; xx++) {
+            if (!this.isRunning) break;
+
+            const tpre = new Array(params.N).fill(-9999999);
+            let V = params.Vrest;
+            const x = new Array(params.N).fill(0);
+            let y = 0;
+            const Vs = new Array(int_length).fill(0);
+
+            let idx = 0;
+            for (let t = int_start; t <= int_end; t++) {
+                // Excitatory input kernel
+                let gex = 0;
+                for (let i = 0; i < params.N; i++) {
+                    gex += g[i] * Math.exp(-(t - tpre[i]) / params.tau_ex);
+                }
+
+                // Integrate-and-fire neuron model
+                const dV = (params.Vrest - V + gex * (params.Eex - V)) / params.tau_m;
+                V = V + dV * dt;
+                Vs[idx] = V;
+
+                let spost = 0;
+                if (V >= params.Vth) {
+                    V = -60;
+                    Vs[idx] = 0;
+                    spost = 1;
+                    // LTP
+                    for (let i = 0; i < params.N; i++) {
+                        g[i] = g[i] + params.gmax * params.A_ltp * x[i];
+                    }
+                }
+                const dy = (-y + spost) / params.tau_ltd;
+
+                // Pre-synaptic spikes: only during burst window
+                const spikespre = new Array(params.N);
+                for (let i = 0; i < params.N; i++) {
+                    const inBurstWindow = t >= latencies[i] && t < (latencies[i] + params.burstdur);
+                    spikespre[i] = (this.matlabRand() <= firingp && inBurstWindow) ? 1 : 0;
+                    if (spikespre[i]) tpre[i] = t + 1;
+                }
+
+                // Update pre-synaptic traces
+                for (let i = 0; i < params.N; i++) {
+                    const dx = (-x[i] + spikespre[i]) / params.tau_ltp;
+                    x[i] = x[i] + dx * dt;
+                }
+
+                // LTD
+                for (let i = 0; i < params.N; i++) {
+                    if (spikespre[i]) {
+                        g[i] = g[i] - params.gmax * params.A_ltd * y;
+                    }
+                }
+
+                y = y + dy * dt;
+
+                // Bound conductances
+                for (let i = 0; i < params.N; i++) {
+                    g[i] = Math.max(Math.min(g[i], params.gmax), 0);
+                }
+
+                idx++;
+            }
+
+            // Plot initial voltage trace after first iteration
+            if (xx === 1) {
+                const voltageData = Vs.map((v, i) => ({
+                    x: int_start + i,
+                    y: v
+                }));
+                this.charts.initialVoltage.data.datasets[0].data = voltageData;
+                this.charts.initialVoltage.update('none');
+            }
+
+            // Update progress and plots (every 100 iterations for performance)
+            if (xx % 100 === 0) {
+                const progress = (xx / params.ttimes) * 100;
+                document.getElementById('f4_progressBar').style.width = `${progress}%`;
+                document.getElementById('f4_status').textContent = `Iteration ${xx}/${params.ttimes}`;
+
+                const weightsData = latencies.map((lat, i) => ({
+                    x: lat,
+                    y: g[i] / params.gmax
+                }));
+                this.charts.currentWeights.data.datasets[0].data = weightsData;
+                this.charts.currentWeights.update('none');
+
+                const voltageData = Vs.map((v, i) => ({
+                    x: int_start + i,
+                    y: v
+                }));
+                this.charts.currentVoltage.data.datasets[0].data = voltageData;
+                this.charts.currentVoltage.update('none');
+
+                await new Promise(resolve => setTimeout(resolve, 1));
+            }
+        }
+
+        // Final update
+        const finalWeightsData = latencies.map((lat, i) => ({
+            x: lat,
+            y: g[i] / params.gmax
+        }));
+        this.charts.currentWeights.data.datasets[0].data = finalWeightsData;
+        this.charts.currentWeights.update();
+
+        document.getElementById('f4_progressBar').style.width = '100%';
+        document.getElementById('f4_status').textContent = 'Simulation completed';
+    }
+
+    stopSimulation() {
+        this.isRunning = false;
+        document.getElementById('f4_status').textContent = 'Simulation stopped';
+        document.getElementById('runFigure4').disabled = false;
+    }
+}
+
+// Tab switching functionality
+let figure4Sim = null;
+
+function setupTabs() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabId = button.getAttribute('data-tab');
+
+            // Update active button
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+
+            // Update active content
+            tabContents.forEach(content => content.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+
+            // Initialize Figure 4 charts when tab is first shown
+            if (tabId === 'figure4' && figure4Sim) {
+                figure4Sim.initializeCharts();
+            }
+        });
+    });
+}
+
+// Initialize the simulations when the page loads
 document.addEventListener('DOMContentLoaded', () => {
     new STDPSimulation();
+    figure4Sim = new Figure4Simulation();
+    setupTabs();
 });
