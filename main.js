@@ -48,18 +48,17 @@ class STDPSimulation {
             });
         });
 
-        // STDP Learning Rule curve
-        const stdpCtx = document.getElementById('stdpCurveChart').getContext('2d');
-        this.charts.stdpCurve = new Chart(stdpCtx, {
-            type: 'scatter',
+        // Weight Distribution histogram
+        const histCtx = document.getElementById('histogramChart').getContext('2d');
+        this.charts.histogram = new Chart(histCtx, {
+            type: 'bar',
             data: {
+                labels: [],
                 datasets: [{
                     data: [],
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
                     borderColor: 'black',
-                    borderWidth: 2,
-                    pointRadius: 0,
-                    showLine: true,
-                    fill: false
+                    borderWidth: 1
                 }]
             },
             options: {
@@ -71,48 +70,36 @@ class STDPSimulation {
                 plugins: { legend: { display: false } },
                 scales: {
                     x: {
-                        title: { display: true, text: 'Δt (ms)' },
-                        min: -100,
-                        max: 100
+                        title: { display: true, text: 'g/g_max' }
                     },
                     y: {
-                        title: { display: true, text: 'Δw' },
-                        min: -0.006,
-                        max: 0.006
+                        title: { display: true, text: 'Count' },
+                        beginAtZero: true
                     }
                 }
             }
         });
-
-        // Draw initial STDP curve
-        this.updateSTDPCurve();
     }
 
-    updateSTDPCurve() {
-        const tau_ltp = parseFloat(document.getElementById('tau_ltp').value);
-        const tau_ltd = parseFloat(document.getElementById('tau_ltp').value);
-        const A_ltp = parseFloat(document.getElementById('A_ltp').value);
-        const A_ltd = A_ltp * parseFloat(document.getElementById('B').value);
+    updateHistogram(weights) {
+        // Create histogram bins (0 to 1 in 10 bins)
+        const numBins = 10;
+        const bins = new Array(numBins).fill(0);
+        const binLabels = [];
 
-        const data = [];
-
-        // LTD side (Δt < 0: post before pre)
-        for (let dt = -100; dt < 0; dt += 1) {
-            const dw = -A_ltd * Math.exp(dt / tau_ltd);
-            data.push({ x: dt, y: dw });
+        for (let i = 0; i < numBins; i++) {
+            binLabels.push((i / numBins + 0.05).toFixed(2));
         }
 
-        // Zero point
-        data.push({ x: 0, y: 0 });
+        // Count weights in each bin
+        weights.forEach(w => {
+            const binIndex = Math.min(Math.floor(w * numBins), numBins - 1);
+            bins[binIndex]++;
+        });
 
-        // LTP side (Δt > 0: pre before post)
-        for (let dt = 1; dt <= 100; dt += 1) {
-            const dw = A_ltp * Math.exp(-dt / tau_ltp);
-            data.push({ x: dt, y: dw });
-        }
-
-        this.charts.stdpCurve.data.datasets[0].data = data;
-        this.charts.stdpCurve.update();
+        this.charts.histogram.data.labels = binLabels;
+        this.charts.histogram.data.datasets[0].data = bins;
+        this.charts.histogram.update();
     }
 
     bindEvents() {
@@ -120,11 +107,6 @@ class STDPSimulation {
         document.getElementById('runCondition2').addEventListener('click', () => this.runCondition(2));
         document.getElementById('runCondition3').addEventListener('click', () => this.runCondition(3));
         document.getElementById('stopSimulation').addEventListener('click', () => this.stopSimulation());
-
-        // Update STDP curve when parameters change
-        ['tau_ltp', 'A_ltp', 'B'].forEach(id => {
-            document.getElementById(id).addEventListener('change', () => this.updateSTDPCurve());
-        });
     }
 
     getParameters() {
@@ -185,6 +167,9 @@ class STDPSimulation {
             const finalWeightsData = finalWeights.map((w, i) => ({ x: i, y: w }));
             this.charts[`condition${conditionNumber}`].data.datasets[0].data = finalWeightsData;
             this.charts[`condition${conditionNumber}`].update();
+
+            // Update weight distribution histogram
+            this.updateHistogram(finalWeights);
 
             document.getElementById('progressBar').style.width = '100%';
             document.getElementById('status').textContent = `${conditionNames[conditionNumber]} completed`;
