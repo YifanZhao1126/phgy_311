@@ -209,7 +209,6 @@ body {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
-    height: 100%;
 }
 
 .plot-grid-2x2 {
