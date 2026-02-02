@@ -19,7 +19,8 @@ class STDPSimulation {
     initializeCharts() {
         const commonOptions = {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
+            aspectRatio: 2,
             animation: false,
             plugins: { legend: { display: false } },
             scales: {

@@ -237,8 +237,6 @@ body {
 
 .plot-item canvas {
     width: 100% !important;
-    height: 200px !important;
-    aspect-ratio: 2 / 1;
     background-color: #ffffff;
 }
 
