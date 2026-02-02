@@ -105,7 +105,7 @@ class STDPSimulation {
                 this.charts[`condition${conditionNumber}`].data.datasets[0].data = weightsData;
                 this.charts[`condition${conditionNumber}`].update('none');
 
-                await new Promise(resolve => setTimeout(resolve, 0));
+                await new Promise(resolve => setTimeout(resolve, 5)); // Small delay like MATLAB's pause(0.0005)
             };
 
             const finalWeights = await runSelectivitySimulation(conditionNumber, params, onProgress);
