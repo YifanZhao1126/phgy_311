@@ -20,8 +20,9 @@ class STDPSimulation {
         const commonOptions = {
             responsive: true,
             maintainAspectRatio: true,
-            aspectRatio: 2,
+            aspectRatio: 1.5,
             animation: false,
+            devicePixelRatio: window.devicePixelRatio || 1,
             plugins: { legend: { display: false } },
             scales: {
                 x: { title: { display: true, text: 'Input Neuron' }, min: 0, max: 100 },
