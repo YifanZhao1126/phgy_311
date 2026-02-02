@@ -73,7 +73,6 @@ body {
 
 .main-container {
     display: flex;
-    min-height: calc(100vh - 120px);
 }
 
 .left-panel {
@@ -88,6 +87,7 @@ body {
     flex: 1;
     padding: 20px;
     background-color: #ffffff;
+    align-self: flex-start;
 }
 
 .section {
