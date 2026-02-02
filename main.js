@@ -30,22 +30,6 @@ class STDPSimulation {
             }
         };
 
-        // Current simulation chart
-        const currentCtx = document.getElementById('currentChart').getContext('2d');
-        this.charts.current = new Chart(currentCtx, {
-            type: 'scatter',
-            data: {
-                datasets: [{
-                    data: [],
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    borderColor: 'black',
-                    borderWidth: 1,
-                    pointRadius: 3
-                }]
-            },
-            options: commonOptions
-        });
-
         // Condition charts
         ['condition1', 'condition2', 'condition3'].forEach((chartId) => {
             const ctx = document.getElementById(`${chartId}Chart`).getContext('2d');
@@ -109,7 +93,7 @@ class STDPSimulation {
         const params = this.getParameters();
 
         try {
-            // Progress callback for UI updates
+            // Progress callback for UI updates - update the condition chart directly
             const onProgress = async (t, total, weights) => {
                 if (!this.isRunning) throw new Error('Stopped');
 
@@ -118,8 +102,8 @@ class STDPSimulation {
                 document.getElementById('status').textContent = `${conditionNames[conditionNumber]}: ${Math.round(progress)}%`;
 
                 const weightsData = weights.map((w, i) => ({ x: i, y: w }));
-                this.charts.current.data.datasets[0].data = weightsData;
-                this.charts.current.update('none');
+                this.charts[`condition${conditionNumber}`].data.datasets[0].data = weightsData;
+                this.charts[`condition${conditionNumber}`].update('none');
 
                 await new Promise(resolve => setTimeout(resolve, 0));
             };
