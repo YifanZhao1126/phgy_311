@@ -47,6 +47,72 @@ class STDPSimulation {
                 options: commonOptions
             });
         });
+
+        // STDP Learning Rule curve
+        const stdpCtx = document.getElementById('stdpCurveChart').getContext('2d');
+        this.charts.stdpCurve = new Chart(stdpCtx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    data: [],
+                    borderColor: 'black',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    showLine: true,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 1.5,
+                animation: false,
+                devicePixelRatio: window.devicePixelRatio || 1,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Δt (ms)' },
+                        min: -100,
+                        max: 100
+                    },
+                    y: {
+                        title: { display: true, text: 'Δw' },
+                        min: -0.006,
+                        max: 0.006
+                    }
+                }
+            }
+        });
+
+        // Draw initial STDP curve
+        this.updateSTDPCurve();
+    }
+
+    updateSTDPCurve() {
+        const tau_ltp = parseFloat(document.getElementById('tau_ltp').value);
+        const tau_ltd = parseFloat(document.getElementById('tau_ltp').value);
+        const A_ltp = parseFloat(document.getElementById('A_ltp').value);
+        const A_ltd = A_ltp * parseFloat(document.getElementById('B').value);
+
+        const data = [];
+
+        // LTD side (Δt < 0: post before pre)
+        for (let dt = -100; dt < 0; dt += 1) {
+            const dw = -A_ltd * Math.exp(dt / tau_ltd);
+            data.push({ x: dt, y: dw });
+        }
+
+        // Zero point
+        data.push({ x: 0, y: 0 });
+
+        // LTP side (Δt > 0: pre before post)
+        for (let dt = 1; dt <= 100; dt += 1) {
+            const dw = A_ltp * Math.exp(-dt / tau_ltp);
+            data.push({ x: dt, y: dw });
+        }
+
+        this.charts.stdpCurve.data.datasets[0].data = data;
+        this.charts.stdpCurve.update();
     }
 
     bindEvents() {
@@ -54,6 +120,11 @@ class STDPSimulation {
         document.getElementById('runCondition2').addEventListener('click', () => this.runCondition(2));
         document.getElementById('runCondition3').addEventListener('click', () => this.runCondition(3));
         document.getElementById('stopSimulation').addEventListener('click', () => this.stopSimulation());
+
+        // Update STDP curve when parameters change
+        ['tau_ltp', 'A_ltp', 'B'].forEach(id => {
+            document.getElementById(id).addEventListener('change', () => this.updateSTDPCurve());
+        });
     }
 
     getParameters() {
