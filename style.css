@@ -208,10 +208,8 @@ body {
 .plot-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    gap: 15px;
-    height: calc(100vh - 200px);
-    max-height: 700px;
+    gap: 10px;
+    height: 100%;
 }
 
 .plot-grid-2x2 {
@@ -227,9 +225,6 @@ body {
     border: 1px solid #000000;
     padding: 15px 10px 10px 15px;
     background-color: #ffffff;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
 }
 
 .plot-item h4 {
@@ -242,27 +237,38 @@ body {
 
 .plot-item canvas {
     width: 100% !important;
-    height: 100% !important;
-    max-height: 280px;
+    height: 200px !important;
+    aspect-ratio: 2 / 1;
     background-color: #ffffff;
 }
 
+.plot-grid-2x2 .plot-item {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.plot-grid-2x2 .plot-item canvas {
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 280px;
+}
 
 @media (max-width: 768px) {
     .main-container {
         flex-direction: column;
     }
-    
+
     .left-panel {
         width: 100%;
         border-right: none;
         border-bottom: 1px solid #cccccc;
     }
-    
+
     .right-panel {
         padding: 15px;
     }
-    
+
     .plot-grid {
         grid-template-columns: 1fr;
     }
