@@ -257,8 +257,8 @@ export async function runSelectivitySimulation(conditionNumber, params, onProgre
             g[i] = Math.max(Math.min(g[i], params.gmax), 0);
         }
 
-        // Progress callback (every 50000 ms for UI updates)
-        if (onProgress && t % 50000 === 0) {
+        // Progress callback (every 10000 ms for UI updates, same as MATLAB)
+        if (onProgress && t % 10000 === 0) {
             const normalizedWeights = g.map(w => w / params.gmax);
             await onProgress(t, params.stime, normalizedWeights);
         }
