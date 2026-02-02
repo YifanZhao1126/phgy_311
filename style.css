@@ -208,8 +208,10 @@ body {
 .plot-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    height: 100%;
+    grid-template-rows: 1fr 1fr;
+    gap: 15px;
+    height: calc(100vh - 200px);
+    max-height: 700px;
 }
 
 .plot-grid-2x2 {
@@ -225,6 +227,9 @@ body {
     border: 1px solid #000000;
     padding: 15px 10px 10px 15px;
     background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .plot-item h4 {
@@ -237,21 +242,11 @@ body {
 
 .plot-item canvas {
     width: 100% !important;
-    height: 220px !important;
+    height: 100% !important;
+    max-height: 280px;
     background-color: #ffffff;
 }
 
-.plot-grid-2x2 .plot-item {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-.plot-grid-2x2 .plot-item canvas {
-    width: 100% !important;
-    height: 100% !important;
-    max-height: 280px;
-}
 
 @media (max-width: 768px) {
     .main-container {
