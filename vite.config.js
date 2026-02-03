@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import { writeFileSync } from 'fs'
 
 export default defineConfig({
   base: './',
@@ -16,5 +17,11 @@ export default defineConfig({
         entryFileNames: 'assets/[name]-[hash].js'
       }
     }
-  }
+  },
+  plugins: [{
+    name: 'create-nojekyll',
+    closeBundle() {
+      writeFileSync('docs/.nojekyll', '')
+    }
+  }]
 })
