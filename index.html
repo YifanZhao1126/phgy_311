@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Spike-Timing Dependent Plasticity Simulation</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <script type="module" src="./main.js"></script>
 </head>
 <body>
@@ -16,7 +19,7 @@
             <button class="tab-button" data-tab="figure4">Figure 4 (NatNeuro 2000)</button>
         </div>
     </div>
-    
+
     <div id="figure1" class="tab-content active">
     <div class="main-container">
         <div class="left-panel">
@@ -39,7 +42,7 @@
                     <input type="number" id="gmax" value="0.75" min="0.1" max="2" step="0.01">
                 </div>
             </div>
-            
+
             <div class="section">
                 <h2>Network Parameters</h2>
                 <div class="param-row">
@@ -59,7 +62,7 @@
                     <input type="number" id="yConst" value="2" min="1" max="20">
                 </div>
             </div>
-            
+
             <div class="section">
                 <h2>Neuron Parameters</h2>
                 <div class="param-row">
@@ -83,7 +86,7 @@
                     <input type="number" id="Eex" value="0" min="-20" max="20">
                 </div>
             </div>
-            
+
             <div class="section">
                 <h2>Simulation Control</h2>
                 <div class="control-buttons">
@@ -100,24 +103,20 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="right-panel">
             <div class="plot-grid">
                 <div class="plot-item">
-                    <h4>Uncorrelated ↔ Uncorrelated</h4>
-                    <canvas id="condition1Chart"></canvas>
+                    <div id="condition1Chart" class="plots"></div>
                 </div>
                 <div class="plot-item">
-                    <h4>Correlated ↔ Uncorrelated</h4>
-                    <canvas id="condition2Chart"></canvas>
+                    <div id="condition2Chart" class="plots"></div>
                 </div>
                 <div class="plot-item">
-                    <h4>Correlated ↔ Correlated</h4>
-                    <canvas id="condition3Chart"></canvas>
+                    <div id="condition3Chart" class="plots"></div>
                 </div>
                 <div class="plot-item">
-                    <h4>Weight Distribution</h4>
-                    <canvas id="histogramChart"></canvas>
+                    <div id="histogramChart" class="plots"></div>
                 </div>
             </div>
         </div>
@@ -217,25 +216,25 @@
         <div class="right-panel">
             <div class="plot-grid-2x2">
                 <div class="plot-item">
-                    <h4>Initial Synaptic Weights</h4>
-                    <canvas id="f4_initialWeights"></canvas>
+                    <div id="f4_initialWeights" class="plots"></div>
                 </div>
                 <div class="plot-item">
-                    <h4>Initial Voltage Trace</h4>
-                    <canvas id="f4_initialVoltage"></canvas>
+                    <div id="f4_initialVoltage" class="plots"></div>
                 </div>
                 <div class="plot-item">
-                    <h4>Synaptic Weights</h4>
-                    <canvas id="f4_currentWeights"></canvas>
+                    <div id="f4_currentWeights" class="plots"></div>
                 </div>
                 <div class="plot-item">
-                    <h4>Voltage Trace</h4>
-                    <canvas id="f4_currentVoltage"></canvas>
+                    <div id="f4_currentVoltage" class="plots"></div>
                 </div>
             </div>
         </div>
     </div>
     </div>
+
+<div class="footer">
+    STDP Simulation Ver. 2.0.0
+</div>
 
 </body>
 </html>

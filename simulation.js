@@ -6,31 +6,41 @@
  */
 
 // =============================================================================
-// GAUSSIAN RANDOM NUMBER GENERATOR (Box-Muller Transform)
+// SEEDED RANDOM NUMBER GENERATOR (Mulberry32 - matches MATLAB's rng behavior)
 // =============================================================================
 
-export class GaussianRNG {
-    constructor() {
-        this.hasSpare = false;
-        this.spare = 0;
+export class SeededRNG {
+    constructor(seed = null) {
+        // rng('shuffle') equivalent - use current time if no seed provided
+        this.seed = seed !== null ? seed : Date.now() ^ (Math.random() * 0xFFFFFFFF);
+        this.state = this.seed;
     }
 
-    reset() {
-        this.hasSpare = false;
-        this.spare = 0;
+    // Mulberry32 PRNG - fast and high quality
+    random() {
+        let t = this.state += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+
+    // Box-Muller transform for Gaussian random numbers (like MATLAB's randn)
+    randn() {
+        const u = this.random();
+        const v = this.random();
+        const mag = Math.sqrt(-2.0 * Math.log(u));
+        return mag * Math.sin(2.0 * Math.PI * v);
+    }
+}
+
+// Legacy class for compatibility
+export class GaussianRNG extends SeededRNG {
+    constructor(seed = null) {
+        super(seed);
     }
 
     next() {
-        if (this.hasSpare) {
-            this.hasSpare = false;
-            return this.spare;
-        }
-        this.hasSpare = true;
-        const u = Math.random();
-        const v = Math.random();
-        const mag = Math.sqrt(-2.0 * Math.log(u));
-        this.spare = mag * Math.cos(2.0 * Math.PI * v);
-        return mag * Math.sin(2.0 * Math.PI * v);
+        return this.randn();
     }
 }
 
@@ -90,34 +100,33 @@ export async function runSelectivitySimulation(conditionNumber, params, onProgre
     // Initialize synaptic weights randomly in [0, gmax]
     const g = new Array(params.N);
     for (let i = 0; i < params.N; i++) {
-        g[i] = Math.min(Math.max(Math.random() * params.gmax, 0), params.gmax);
+        g[i] = Math.min(Math.max(rng.random() * params.gmax, 0), params.gmax);
     }
 
-    // Correlation timing variables
-    let dur1 = Math.round(Math.max(1, params.corr_time + rng.next()));
-    let dur2 = Math.round(Math.max(1, params.corr_time + rng.next()));
-
-    // Check which correlation groups exist
-    const hasCorr1 = corri.some(c => c === 1);
-    const hasCorr2 = corri.some(c => c === 2);
+    // Two separate timers (matching MATLAB simSTDP2 - concurrent clusters)
+    let dur1 = Math.round(Math.max(1, params.corr_time + rng.randn()));
+    let dur2 = Math.round(Math.max(1, params.corr_time + rng.randn()));
 
     // -------------------------------------------------------------------------
-    // Initialize firing rates based on correlation structure
+    // Initialize firing rates (matching MATLAB simSTDP2)
     // -------------------------------------------------------------------------
     let xa = new Array(params.N);
+    let ya;
 
-    // Uncorrelated inputs: independent noise
-    for (let i = 0; i < params.N; i++) xa[i] = rng.next();
+    // Uncorrelated input
+    for (let i = 0; i < params.N; i++) xa[i] = rng.randn();
     for (let i = 0; i < params.N; i++) {
         if (corri[i] === 0) {
             ratesi[i] = 10 * (1 + 0.3 * Math.sqrt(2) * xa[i]);
         }
     }
 
-    // Correlated group 1: shared + private noise
-    if (hasCorr1) {
-        for (let i = 0; i < params.N; i++) xa[i] = rng.next();
-        const ya = rng.next();  // Shared noise
+    // Check which correlation groups exist
+    let corr1 = 0;
+    if (corri.some(c => c === 1)) {
+        corr1 = 1;
+        for (let i = 0; i < params.N; i++) xa[i] = rng.randn();
+        ya = rng.randn();
         for (let i = 0; i < params.N; i++) {
             if (corri[i] === 1) {
                 ratesi[i] = 10 * (1 + 0.3 * Math.sqrt(2) * xa[i] + params.yConst * ya);
@@ -125,10 +134,11 @@ export async function runSelectivitySimulation(conditionNumber, params, onProgre
         }
     }
 
-    // Correlated group 2: shared + private noise
-    if (hasCorr2) {
-        for (let i = 0; i < params.N; i++) xa[i] = rng.next();
-        const ya = rng.next();
+    let corr2 = 0;
+    if (corri.some(c => c === 2)) {
+        corr2 = 1;
+        for (let i = 0; i < params.N; i++) xa[i] = rng.randn();
+        ya = rng.randn();
         for (let i = 0; i < params.N; i++) {
             if (corri[i] === 2) {
                 ratesi[i] = 10 * (1 + 0.3 * Math.sqrt(2) * xa[i] + params.yConst * ya);
@@ -139,29 +149,33 @@ export async function runSelectivitySimulation(conditionNumber, params, onProgre
     // Convert rates to spike probabilities
     for (let i = 0; i < params.N; i++) {
         ratesi[i] = Math.max(ratesi[i], 0);
-        ratesp[i] = 1 - Math.exp(-ratesi[i] * 0.001);
+    }
+    for (let i = 0; i < params.N; i++) {
+        if (corri[i] === 0) ratesp[i] = 1 - Math.exp(-ratesi[i] * 0.001);
+        if (corri[i] === 1) ratesp[i] = 1 - Math.exp(-ratesi[i] * 0.001);
+        if (corri[i] === 2) ratesp[i] = 1 - Math.exp(-ratesi[i] * 0.001);
     }
 
     // -------------------------------------------------------------------------
-    // Main simulation loop
+    // Main simulation loop (matching MATLAB simSTDP2 - concurrent clusters)
     // -------------------------------------------------------------------------
     for (let t = 1; t <= params.stime; t++) {
 
-        // Update firing rates when correlation window expires
+        // Timer 1: Update uncorrelated inputs AND correlated group 1
         if (t % dur1 === 0) {
             // Regenerate uncorrelated inputs
-            for (let i = 0; i < params.N; i++) xa[i] = rng.next();
+            for (let i = 0; i < params.N; i++) xa[i] = rng.randn();
             for (let i = 0; i < params.N; i++) {
                 if (corri[i] === 0) {
                     ratesi[i] = 10 * (1 + 0.3 * Math.sqrt(2) * xa[i]);
                 }
             }
-            dur1 = Math.round(Math.max(1, params.corr_time + rng.next()));
+            dur1 = Math.round(Math.max(1, params.corr_time + rng.randn()));
 
-            // Regenerate correlated group 1
-            if (hasCorr1) {
-                for (let i = 0; i < params.N; i++) xa[i] = rng.next();
-                const ya = rng.next();
+            // Regenerate for correlated group 1
+            for (let i = 0; i < params.N; i++) xa[i] = rng.randn();
+            ya = rng.randn();
+            if (corr1) {
                 for (let i = 0; i < params.N; i++) {
                     if (corri[i] === 1) {
                         ratesi[i] = 10 * (1 + 0.3 * xa[i] + params.yConst * ya);
@@ -169,17 +183,23 @@ export async function runSelectivitySimulation(conditionNumber, params, onProgre
                     }
                 }
             }
+            // Update spike probabilities for uncorrelated
             for (let i = 0; i < params.N; i++) {
-                if (corri[i] === 0) ratesp[i] = 1 - Math.exp(-ratesi[i] * 0.001);
+                if (corri[i] === 0) {
+                    ratesp[i] = 1 - Math.exp(-ratesi[i] * 0.001);
+                }
+            }
+            for (let i = 0; i < params.N; i++) {
                 ratesi[i] = Math.max(ratesi[i], 0);
             }
         }
 
-        // Update correlated group 2 on separate timer
-        if (hasCorr2 && t % dur2 === 0) {
-            for (let i = 0; i < params.N; i++) xa[i] = rng.next();
-            const ya = rng.next();
-            dur2 = Math.round(Math.max(1, params.corr_time + rng.next()));
+        // Timer 2: Update correlated group 2 (only if it exists)
+        if (corr2 && t % dur2 === 0) {
+            for (let i = 0; i < params.N; i++) xa[i] = rng.randn();
+            ya = rng.randn();
+            dur2 = Math.round(Math.max(1, params.corr_time + rng.randn()));
+
             for (let i = 0; i < params.N; i++) {
                 if (corri[i] === 2) {
                     ratesi[i] = 10 * (1 + 0.3 * xa[i] + params.yConst * ya);
@@ -226,7 +246,7 @@ export async function runSelectivitySimulation(conditionNumber, params, onProgre
         // ---------------------------------------------------------------------
         const spikespre = new Array(params.N);
         for (let i = 0; i < params.N; i++) {
-            spikespre[i] = Math.random() <= ratesp[i] ? 1 : 0;
+            spikespre[i] = rng.random() <= ratesp[i] ? 1 : 0;
             if (spikespre[i]) tpre[i] = t + 1;
         }
 
@@ -301,6 +321,10 @@ export async function runLatencySimulation(params, onProgress = null) {
     // Spike probability during burst
     const firingp = 1 - Math.exp(-params.burstrate * 0.001);
 
+    // Pre/post synaptic traces - persist across trials (matching MATLAB)
+    const x = new Array(params.N).fill(0);
+    let y = 0;
+
     let initialVoltage = null;
 
     // -------------------------------------------------------------------------
@@ -309,8 +333,6 @@ export async function runLatencySimulation(params, onProgress = null) {
     for (let trial = 1; trial <= params.ttimes; trial++) {
         const tpre = new Array(params.N).fill(-9999999);
         let V = params.Vrest;
-        const x = new Array(params.N).fill(0);
-        let y = 0;
         const Vs = new Array(int_length).fill(0);
 
         let idx = 0;
@@ -345,7 +367,7 @@ export async function runLatencySimulation(params, onProgress = null) {
             const spikespre = new Array(params.N);
             for (let i = 0; i < params.N; i++) {
                 const inBurstWindow = t >= latencies[i] && t < (latencies[i] + params.burstdur);
-                spikespre[i] = (Math.random() <= firingp && inBurstWindow) ? 1 : 0;
+                spikespre[i] = (rng.random() <= firingp && inBurstWindow) ? 1 : 0;
                 if (spikespre[i]) tpre[i] = t + 1;
             }
 

@@ -1,396 +1,474 @@
-import { Chart, registerables } from 'chart.js';
-import './style.css';
+// Plotly is loaded from CDN in index.html (same as example)
 import { runSelectivitySimulation, runLatencySimulation } from './simulation.js';
-
-Chart.register(...registerables);
+import './style.css';
 
 // =============================================================================
-// FIGURE 7: Input Selectivity Simulation UI
+// Plotly Configuration (same as example)
 // =============================================================================
 
-class STDPSimulation {
-    constructor() {
-        this.isRunning = false;
-        this.charts = {};
-        this.initializeCharts();
-        this.bindEvents();
-    }
+var config = {responsive: true};
 
-    initializeCharts() {
-        const commonOptions = {
-            responsive: true,
-            maintainAspectRatio: true,
-            aspectRatio: 1.5,
-            animation: false,
-            devicePixelRatio: window.devicePixelRatio || 1,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { title: { display: true, text: 'Input Neuron' }, min: 0, max: 100 },
-                y: { title: { display: true, text: 'g/g_max' }, min: -0.05, max: 1.05 }
-            }
-        };
+// =============================================================================
+// Figure 1 Layouts
+// =============================================================================
 
-        // Condition charts
-        ['condition1', 'condition2', 'condition3'].forEach((chartId) => {
-            const ctx = document.getElementById(`${chartId}Chart`).getContext('2d');
-            this.charts[chartId] = new Chart(ctx, {
-                type: 'scatter',
-                data: {
-                    datasets: [{
-                        data: [],
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        borderColor: 'black',
-                        borderWidth: 1,
-                        pointRadius: 3
-                    }]
-                },
-                options: commonOptions
-            });
-        });
+var layout1 = {
+    title: '<b>Uncorrelated \u2194 Uncorrelated</b>',
+    xaxis: {
+        title: '<b>Input Neuron</b>',
+        range: [0, 100],
+        zeroline: false
+    },
+    yaxis: {
+        title: '<b>g/g<sub>max</sub></b>',
+        range: [-0.05, 1.05],
+        zeroline: false
+    },
+    autosize: true,
+    paper_bgcolor: '#c7c7c7',
+    showlegend: false
+};
 
-        // Weight Distribution histogram
-        const histCtx = document.getElementById('histogramChart').getContext('2d');
-        this.charts.histogram = new Chart(histCtx, {
-            type: 'bar',
-            data: {
-                labels: [],
-                datasets: [{
-                    data: [],
-                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                    borderColor: 'black',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                aspectRatio: 1.5,
-                animation: false,
-                devicePixelRatio: window.devicePixelRatio || 1,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: {
-                        title: { display: true, text: 'g/g_max' }
-                    },
-                    y: {
-                        title: { display: true, text: 'Count' },
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-    }
+var layout2 = {
+    title: '<b>Correlated \u2194 Uncorrelated</b>',
+    xaxis: {
+        title: '<b>Input Neuron</b>',
+        range: [0, 100],
+        zeroline: false
+    },
+    yaxis: {
+        title: '<b>g/g<sub>max</sub></b>',
+        range: [-0.05, 1.05],
+        zeroline: false
+    },
+    autosize: true,
+    paper_bgcolor: '#c7c7c7',
+    showlegend: false
+};
 
-    updateHistogram(weights) {
-        // Create histogram bins (0 to 1 in 10 bins)
-        const numBins = 10;
-        const bins = new Array(numBins).fill(0);
-        const binLabels = [];
+var layout3 = {
+    title: '<b>Correlated \u2194 Correlated</b>',
+    xaxis: {
+        title: '<b>Input Neuron</b>',
+        range: [0, 100],
+        zeroline: false
+    },
+    yaxis: {
+        title: '<b>g/g<sub>max</sub></b>',
+        range: [-0.05, 1.05],
+        zeroline: false
+    },
+    autosize: true,
+    paper_bgcolor: '#c7c7c7',
+    showlegend: false
+};
 
-        for (let i = 0; i < numBins; i++) {
-            binLabels.push((i / numBins + 0.05).toFixed(2));
+var layoutHist = {
+    title: '<b>Weight Distribution</b>',
+    xaxis: {
+        title: '<b>g/g<sub>max</sub></b>',
+        zeroline: false
+    },
+    yaxis: {
+        title: '<b>Count</b>',
+        zeroline: false
+    },
+    autosize: true,
+    paper_bgcolor: '#c7c7c7',
+    showlegend: false
+};
+
+// =============================================================================
+// Figure 4 Layouts
+// =============================================================================
+
+var layoutF4InitWeights = {
+    title: '<b>Initial Synaptic Weights</b>',
+    xaxis: {
+        title: '<b>Latency (ms)</b>',
+        range: [-55, 55],
+        zeroline: false
+    },
+    yaxis: {
+        title: '<b>g/g<sub>max</sub></b>',
+        range: [0, 1],
+        zeroline: false
+    },
+    autosize: true,
+    paper_bgcolor: '#c7c7c7',
+    showlegend: false
+};
+
+var layoutF4InitVoltage = {
+    title: '<b>Initial Voltage Trace</b>',
+    xaxis: {
+        title: '<b>Time (ms)</b>',
+        range: [-50, 50],
+        zeroline: false
+    },
+    yaxis: {
+        title: '<b>Voltage (mV)</b>',
+        range: [-80, 0],
+        zeroline: false
+    },
+    autosize: true,
+    paper_bgcolor: '#c7c7c7',
+    showlegend: false
+};
+
+var layoutF4CurrWeights = {
+    title: '<b>Synaptic Weights</b>',
+    xaxis: {
+        title: '<b>Latency (ms)</b>',
+        range: [-55, 55],
+        zeroline: false
+    },
+    yaxis: {
+        title: '<b>g/g<sub>max</sub></b>',
+        range: [0, 1],
+        zeroline: false
+    },
+    autosize: true,
+    paper_bgcolor: '#c7c7c7',
+    showlegend: false
+};
+
+var layoutF4CurrVoltage = {
+    title: '<b>Voltage Trace</b>',
+    xaxis: {
+        title: '<b>Time (ms)</b>',
+        range: [-50, 50],
+        zeroline: false
+    },
+    yaxis: {
+        title: '<b>Voltage (mV)</b>',
+        range: [-80, 0],
+        zeroline: false
+    },
+    autosize: true,
+    paper_bgcolor: '#c7c7c7',
+    showlegend: false
+};
+
+// =============================================================================
+// FIGURE 1: Input Selectivity Simulation
+// =============================================================================
+
+var isRunning = false;
+
+function getParameters() {
+    return {
+        N: parseInt(document.getElementById('N').value),
+        tau_ltp: parseFloat(document.getElementById('tau_ltp').value),
+        tau_ltd: parseFloat(document.getElementById('tau_ltp').value),
+        A_ltp: parseFloat(document.getElementById('A_ltp').value),
+        A_ltd: parseFloat(document.getElementById('A_ltp').value) * parseFloat(document.getElementById('B').value),
+        gmax: parseFloat(document.getElementById('gmax').value),
+        Vrest: parseFloat(document.getElementById('Vrest').value),
+        Vth: parseFloat(document.getElementById('Vth').value),
+        tau_m: parseFloat(document.getElementById('tau_m').value),
+        stime: parseInt(document.getElementById('stime').value),
+        tau_ex: parseFloat(document.getElementById('tau_ex').value),
+        Eex: parseFloat(document.getElementById('Eex').value),
+        corr_time: parseFloat(document.getElementById('corr_time').value),
+        yConst: parseFloat(document.getElementById('yConst').value)
+    };
+}
+
+function initializePlots() {
+    // Initialize empty scatter plots for Figure 1
+    var emptyTrace = {
+        x: [],
+        y: [],
+        mode: 'markers',
+        type: 'scatter',
+        marker: {
+            color: 'rgb(0, 0, 0)',
+            size: 6
         }
+    };
 
-        // Count weights in each bin
-        weights.forEach(w => {
-            const binIndex = Math.min(Math.floor(w * numBins), numBins - 1);
-            bins[binIndex]++;
-        });
+    Plotly.newPlot('condition1Chart', [emptyTrace], layout1, config);
+    Plotly.newPlot('condition2Chart', [emptyTrace], layout2, config);
+    Plotly.newPlot('condition3Chart', [emptyTrace], layout3, config);
 
-        this.charts.histogram.data.labels = binLabels;
-        this.charts.histogram.data.datasets[0].data = bins;
-        this.charts.histogram.update();
-    }
-
-    bindEvents() {
-        document.getElementById('runCondition1').addEventListener('click', () => this.runCondition(1));
-        document.getElementById('runCondition2').addEventListener('click', () => this.runCondition(2));
-        document.getElementById('runCondition3').addEventListener('click', () => this.runCondition(3));
-        document.getElementById('stopSimulation').addEventListener('click', () => this.stopSimulation());
-    }
-
-    getParameters() {
-        return {
-            N: parseInt(document.getElementById('N').value),
-            tau_ltp: parseFloat(document.getElementById('tau_ltp').value),
-            tau_ltd: parseFloat(document.getElementById('tau_ltp').value),
-            A_ltp: parseFloat(document.getElementById('A_ltp').value),
-            A_ltd: parseFloat(document.getElementById('A_ltp').value) * parseFloat(document.getElementById('B').value),
-            gmax: parseFloat(document.getElementById('gmax').value),
-            Vrest: parseFloat(document.getElementById('Vrest').value),
-            Vth: parseFloat(document.getElementById('Vth').value),
-            tau_m: parseFloat(document.getElementById('tau_m').value),
-            stime: parseInt(document.getElementById('stime').value),
-            tau_ex: parseFloat(document.getElementById('tau_ex').value),
-            Eex: parseFloat(document.getElementById('Eex').value),
-            corr_time: parseFloat(document.getElementById('corr_time').value),
-            yConst: parseFloat(document.getElementById('yConst').value)
-        };
-    }
-
-    async runCondition(conditionNumber) {
-        if (this.isRunning) return;
-
-        this.isRunning = true;
-        const buttons = ['runCondition1', 'runCondition2', 'runCondition3'];
-        buttons.forEach(id => document.getElementById(id).disabled = true);
-
-        const conditionNames = {
-            1: 'Uncorrelated ↔ Uncorrelated',
-            2: 'Correlated ↔ Uncorrelated',
-            3: 'Correlated ↔ Correlated'
-        };
-
-        document.getElementById('status').textContent = `Running ${conditionNames[conditionNumber]}...`;
-
-        const params = this.getParameters();
-
-        try {
-            // Progress callback for UI updates - update the condition chart directly
-            const onProgress = async (t, total, weights) => {
-                if (!this.isRunning) throw new Error('Stopped');
-
-                const progress = (t / total) * 100;
-                document.getElementById('progressBar').style.width = `${progress}%`;
-                document.getElementById('status').textContent = `${conditionNames[conditionNumber]}: ${Math.round(progress)}%`;
-
-                const weightsData = weights.map((w, i) => ({ x: i, y: w }));
-                this.charts[`condition${conditionNumber}`].data.datasets[0].data = weightsData;
-                this.charts[`condition${conditionNumber}`].update('none');
-
-                await new Promise(resolve => setTimeout(resolve, 5)); // Small delay like MATLAB's pause(0.0005)
-            };
-
-            const finalWeights = await runSelectivitySimulation(conditionNumber, params, onProgress);
-
-            // Store final results
-            const finalWeightsData = finalWeights.map((w, i) => ({ x: i, y: w }));
-            this.charts[`condition${conditionNumber}`].data.datasets[0].data = finalWeightsData;
-            this.charts[`condition${conditionNumber}`].update();
-
-            // Update weight distribution histogram
-            this.updateHistogram(finalWeights);
-
-            document.getElementById('progressBar').style.width = '100%';
-            document.getElementById('status').textContent = `${conditionNames[conditionNumber]} completed`;
-
-        } catch (error) {
-            if (error.message !== 'Stopped') {
-                console.error('Simulation error:', error);
-                document.getElementById('status').textContent = 'Error occurred';
-            }
+    // Initialize empty histogram
+    var emptyHist = {
+        x: [],
+        type: 'histogram',
+        marker: {
+            color: 'rgba(0, 0, 0, 0.7)'
+        },
+        xbins: {
+            start: 0,
+            end: 1,
+            size: 0.1
         }
+    };
+    Plotly.newPlot('histogramChart', [emptyHist], layoutHist, config);
+}
 
-        this.isRunning = false;
-        buttons.forEach(id => document.getElementById(id).disabled = false);
+function updateConditionPlot(conditionNumber, weights) {
+    var chartId = 'condition' + conditionNumber + 'Chart';
+    var x = [];
+    var y = [];
+    for (var i = 0; i < weights.length; i++) {
+        x.push(i);
+        y.push(weights[i]);
     }
 
-    stopSimulation() {
-        this.isRunning = false;
-        document.getElementById('status').textContent = 'Simulation stopped';
-        const buttons = ['runCondition1', 'runCondition2', 'runCondition3'];
-        buttons.forEach(id => document.getElementById(id).disabled = false);
+    // Use restyle for smoother updates without flashing
+    Plotly.restyle(chartId, {
+        x: [x],
+        y: [y]
+    }, [0]);
+}
+
+function updateHistogram(weights) {
+    // Use restyle for smoother updates
+    Plotly.restyle('histogramChart', {
+        x: [weights]
+    }, [0]);
+}
+
+async function runCondition(conditionNumber) {
+    if (isRunning) return;
+
+    isRunning = true;
+    var buttons = ['runCondition1', 'runCondition2', 'runCondition3'];
+    buttons.forEach(function(id) { document.getElementById(id).disabled = true; });
+
+    var conditionNames = {
+        1: 'Uncorrelated \u2194 Uncorrelated',
+        2: 'Correlated \u2194 Uncorrelated',
+        3: 'Correlated \u2194 Correlated'
+    };
+
+    document.getElementById('status').textContent = 'Running ' + conditionNames[conditionNumber] + '...';
+
+    var params = getParameters();
+
+    try {
+        var onProgress = async function(t, total, weights) {
+            if (!isRunning) throw new Error('Stopped');
+
+            var progress = (t / total) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('status').textContent = conditionNames[conditionNumber] + ': ' + Math.round(progress) + '%';
+
+            updateConditionPlot(conditionNumber, weights);
+
+            await new Promise(function(resolve) { setTimeout(resolve, 5); });
+        };
+
+        var finalWeights = await runSelectivitySimulation(conditionNumber, params, onProgress);
+
+        updateConditionPlot(conditionNumber, finalWeights);
+        updateHistogram(finalWeights);
+
+        document.getElementById('progressBar').style.width = '100%';
+        document.getElementById('status').textContent = conditionNames[conditionNumber] + ' completed';
+
+    } catch (error) {
+        if (error.message !== 'Stopped') {
+            console.error('Simulation error:', error);
+            document.getElementById('status').textContent = 'Error occurred';
+        }
     }
+
+    isRunning = false;
+    buttons.forEach(function(id) { document.getElementById(id).disabled = false; });
+}
+
+function stopSimulation() {
+    isRunning = false;
+    document.getElementById('status').textContent = 'Simulation stopped';
+    var buttons = ['runCondition1', 'runCondition2', 'runCondition3'];
+    buttons.forEach(function(id) { document.getElementById(id).disabled = false; });
 }
 
 // =============================================================================
-// FIGURE 4: Latency Simulation UI
+// FIGURE 4: Latency Simulation
 // =============================================================================
 
-class Figure4Simulation {
-    constructor() {
-        this.isRunning = false;
-        this.charts = {};
-        this.chartsInitialized = false;
-        this.bindEvents();
-    }
+var f4_isRunning = false;
+var f4_chartsInitialized = false;
 
-    initializeCharts() {
-        if (this.chartsInitialized) return;
-        this.chartsInitialized = true;
+function getF4Parameters() {
+    return {
+        N: parseInt(document.getElementById('f4_N').value),
+        tau_ltp: parseFloat(document.getElementById('f4_tau_ltp').value),
+        tau_ltd: parseFloat(document.getElementById('f4_tau_ltp').value),
+        A_ltp: parseFloat(document.getElementById('f4_A_ltp').value),
+        A_ltd: parseFloat(document.getElementById('f4_A_ltp').value) * parseFloat(document.getElementById('f4_B').value),
+        gmax: parseFloat(document.getElementById('f4_gmax').value),
+        Vrest: parseFloat(document.getElementById('f4_Vrest').value),
+        Vth: parseFloat(document.getElementById('f4_Vth').value),
+        tau_m: parseFloat(document.getElementById('f4_tau_m').value),
+        tau_ex: parseFloat(document.getElementById('f4_tau_ex').value),
+        Eex: parseFloat(document.getElementById('f4_Eex').value),
+        ttimes: parseInt(document.getElementById('f4_ttimes').value),
+        latency_std: parseFloat(document.getElementById('f4_latency_std').value),
+        burstdur: parseFloat(document.getElementById('f4_burstdur').value),
+        burstrate: parseFloat(document.getElementById('f4_burstrate').value)
+    };
+}
 
-        const weightsOptions = {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { title: { display: true, text: 'Latency (ms)' }, min: -55, max: 55 },
-                y: { title: { display: true, text: 'g/g_max' }, min: 0, max: 1 }
-            }
-        };
+function initializeF4Plots() {
+    if (f4_chartsInitialized) return;
+    f4_chartsInitialized = true;
 
-        const voltageOptions = {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { title: { display: true, text: 'Time (ms)' }, min: -50, max: 50 },
-                y: { title: { display: true, text: 'Voltage (mV)' } }
-            }
-        };
-
-        // Initial weights chart
-        const initWeightsCtx = document.getElementById('f4_initialWeights').getContext('2d');
-        this.charts.initialWeights = new Chart(initWeightsCtx, {
-            type: 'scatter',
-            data: { datasets: [{ data: [], backgroundColor: 'rgba(0, 0, 0, 0.8)', borderColor: 'black', borderWidth: 1, pointRadius: 2 }] },
-            options: weightsOptions
-        });
-
-        // Initial voltage chart
-        const initVoltageCtx = document.getElementById('f4_initialVoltage').getContext('2d');
-        this.charts.initialVoltage = new Chart(initVoltageCtx, {
-            type: 'scatter',
-            data: { datasets: [{ data: [], borderColor: 'black', borderWidth: 1, fill: false, pointRadius: 0, showLine: true }] },
-            options: voltageOptions
-        });
-
-        // Current weights chart
-        const currWeightsCtx = document.getElementById('f4_currentWeights').getContext('2d');
-        this.charts.currentWeights = new Chart(currWeightsCtx, {
-            type: 'scatter',
-            data: { datasets: [{ data: [], backgroundColor: 'rgba(0, 0, 0, 0.8)', borderColor: 'black', borderWidth: 1, pointRadius: 2 }] },
-            options: weightsOptions
-        });
-
-        // Current voltage chart
-        const currVoltageCtx = document.getElementById('f4_currentVoltage').getContext('2d');
-        this.charts.currentVoltage = new Chart(currVoltageCtx, {
-            type: 'scatter',
-            data: { datasets: [{ data: [], borderColor: 'black', borderWidth: 1, fill: false, pointRadius: 0, showLine: true }] },
-            options: voltageOptions
-        });
-    }
-
-    bindEvents() {
-        document.getElementById('runFigure4').addEventListener('click', () => this.runSimulation());
-        document.getElementById('stopFigure4').addEventListener('click', () => this.stopSimulation());
-    }
-
-    getParameters() {
-        return {
-            N: parseInt(document.getElementById('f4_N').value),
-            tau_ltp: parseFloat(document.getElementById('f4_tau_ltp').value),
-            tau_ltd: parseFloat(document.getElementById('f4_tau_ltp').value),
-            A_ltp: parseFloat(document.getElementById('f4_A_ltp').value),
-            A_ltd: parseFloat(document.getElementById('f4_A_ltp').value) * parseFloat(document.getElementById('f4_B').value),
-            gmax: parseFloat(document.getElementById('f4_gmax').value),
-            Vrest: parseFloat(document.getElementById('f4_Vrest').value),
-            Vth: parseFloat(document.getElementById('f4_Vth').value),
-            tau_m: parseFloat(document.getElementById('f4_tau_m').value),
-            tau_ex: parseFloat(document.getElementById('f4_tau_ex').value),
-            Eex: parseFloat(document.getElementById('f4_Eex').value),
-            ttimes: parseInt(document.getElementById('f4_ttimes').value),
-            latency_std: parseFloat(document.getElementById('f4_latency_std').value),
-            burstdur: parseFloat(document.getElementById('f4_burstdur').value),
-            burstrate: parseFloat(document.getElementById('f4_burstrate').value)
-        };
-    }
-
-    async runSimulation() {
-        if (this.isRunning) return;
-
-        this.initializeCharts();
-        this.isRunning = true;
-        document.getElementById('runFigure4').disabled = true;
-        document.getElementById('f4_status').textContent = 'Initializing...';
-
-        const params = this.getParameters();
-
-        try {
-            // Progress callback
-            const onProgress = async (trial, total, latencies, weights, voltage, initialVoltage) => {
-                if (!this.isRunning) throw new Error('Stopped');
-
-                const progress = (trial / total) * 100;
-                document.getElementById('f4_progressBar').style.width = `${progress}%`;
-                document.getElementById('f4_status').textContent = `Iteration ${trial}/${total}`;
-
-                // Update initial weights/voltage on first callback
-                if (trial === 100) {
-                    const initialWeightsData = latencies.map((lat, i) => ({ x: lat, y: 0.003 / params.gmax }));
-                    this.charts.initialWeights.data.datasets[0].data = initialWeightsData;
-                    this.charts.initialWeights.update('none');
-
-                    if (initialVoltage) {
-                        const voltageData = initialVoltage.map((v, i) => ({ x: -50 + i, y: v }));
-                        this.charts.initialVoltage.data.datasets[0].data = voltageData;
-                        this.charts.initialVoltage.update('none');
-                    }
-                }
-
-                // Update current weights/voltage
-                const weightsData = latencies.map((lat, i) => ({ x: lat, y: weights[i] }));
-                this.charts.currentWeights.data.datasets[0].data = weightsData;
-                this.charts.currentWeights.update('none');
-
-                const voltageData = voltage.map((v, i) => ({ x: -50 + i, y: v }));
-                this.charts.currentVoltage.data.datasets[0].data = voltageData;
-                this.charts.currentVoltage.update('none');
-
-                await new Promise(resolve => setTimeout(resolve, 1));
-            };
-
-            const { latencies, weights } = await runLatencySimulation(params, onProgress);
-
-            // Final update
-            const finalWeightsData = latencies.map((lat, i) => ({ x: lat, y: weights[i] }));
-            this.charts.currentWeights.data.datasets[0].data = finalWeightsData;
-            this.charts.currentWeights.update();
-
-            document.getElementById('f4_progressBar').style.width = '100%';
-            document.getElementById('f4_status').textContent = 'Simulation completed';
-
-        } catch (error) {
-            if (error.message !== 'Stopped') {
-                console.error('Simulation error:', error);
-                document.getElementById('f4_status').textContent = 'Error occurred';
-            }
+    var emptyScatter = {
+        x: [],
+        y: [],
+        mode: 'markers',
+        type: 'scatter',
+        marker: {
+            color: 'rgb(0, 0, 0)',
+            size: 4
         }
+    };
 
-        this.isRunning = false;
-        document.getElementById('runFigure4').disabled = false;
+    var emptyLine = {
+        x: [],
+        y: [],
+        mode: 'lines',
+        type: 'scatter',
+        line: {
+            color: 'rgb(0, 0, 0)',
+            width: 2
+        }
+    };
+
+    Plotly.newPlot('f4_initialWeights', [emptyScatter], layoutF4InitWeights, config);
+    Plotly.newPlot('f4_initialVoltage', [emptyLine], layoutF4InitVoltage, config);
+    Plotly.newPlot('f4_currentWeights', [emptyScatter], layoutF4CurrWeights, config);
+    Plotly.newPlot('f4_currentVoltage', [emptyLine], layoutF4CurrVoltage, config);
+}
+
+async function runFigure4() {
+    if (f4_isRunning) return;
+
+    initializeF4Plots();
+    f4_isRunning = true;
+    document.getElementById('runFigure4').disabled = true;
+    document.getElementById('f4_status').textContent = 'Initializing...';
+
+    var params = getF4Parameters();
+
+    try {
+        var onProgress = async function(trial, total, latencies, weights, voltage, initialVoltage) {
+            if (!f4_isRunning) throw new Error('Stopped');
+
+            var progress = (trial / total) * 100;
+            document.getElementById('f4_progressBar').style.width = progress + '%';
+            document.getElementById('f4_status').textContent = 'Iteration ' + trial + '/' + total;
+
+            // Update initial weights/voltage on first callback
+            if (trial === 100) {
+                Plotly.restyle('f4_initialWeights', {
+                    x: [latencies],
+                    y: [new Array(latencies.length).fill(0.003 / params.gmax)]
+                }, [0]);
+
+                if (initialVoltage) {
+                    var initTimeAxis = [];
+                    for (var i = 0; i < initialVoltage.length; i++) {
+                        initTimeAxis.push(-50 + i);
+                    }
+                    Plotly.restyle('f4_initialVoltage', {
+                        x: [initTimeAxis],
+                        y: [initialVoltage]
+                    }, [0]);
+                }
+            }
+
+            // Update current weights using restyle (no flashing)
+            Plotly.restyle('f4_currentWeights', {
+                x: [latencies],
+                y: [weights]
+            }, [0]);
+
+            // Update current voltage using restyle (no flashing)
+            var timeAxis = [];
+            for (var i = 0; i < voltage.length; i++) {
+                timeAxis.push(-50 + i);
+            }
+            Plotly.restyle('f4_currentVoltage', {
+                x: [timeAxis],
+                y: [voltage]
+            }, [0]);
+
+            await new Promise(function(resolve) { setTimeout(resolve, 1); });
+        };
+
+        var result = await runLatencySimulation(params, onProgress);
+
+        // Final update using restyle
+        Plotly.restyle('f4_currentWeights', {
+            x: [result.latencies],
+            y: [result.weights]
+        }, [0]);
+
+        document.getElementById('f4_progressBar').style.width = '100%';
+        document.getElementById('f4_status').textContent = 'Simulation completed';
+
+    } catch (error) {
+        if (error.message !== 'Stopped') {
+            console.error('Simulation error:', error);
+            document.getElementById('f4_status').textContent = 'Error occurred';
+        }
     }
 
-    stopSimulation() {
-        this.isRunning = false;
-        document.getElementById('f4_status').textContent = 'Simulation stopped';
-        document.getElementById('runFigure4').disabled = false;
-    }
+    f4_isRunning = false;
+    document.getElementById('runFigure4').disabled = false;
+}
+
+function stopFigure4() {
+    f4_isRunning = false;
+    document.getElementById('f4_status').textContent = 'Simulation stopped';
+    document.getElementById('runFigure4').disabled = false;
 }
 
 // =============================================================================
 // Tab Switching
 // =============================================================================
 
-let figure4Sim = null;
-
 function setupTabs() {
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabContents = document.querySelectorAll('.tab-content');
+    var tabButtons = document.querySelectorAll('.tab-button');
+    var tabContents = document.querySelectorAll('.tab-content');
 
-    tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const tabId = button.getAttribute('data-tab');
+    tabButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            var tabId = button.getAttribute('data-tab');
 
-            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabButtons.forEach(function(btn) { btn.classList.remove('active'); });
             button.classList.add('active');
 
-            tabContents.forEach(content => content.classList.remove('active'));
+            tabContents.forEach(function(content) { content.classList.remove('active'); });
             document.getElementById(tabId).classList.add('active');
 
-            if (tabId === 'figure4' && figure4Sim) {
-                figure4Sim.initializeCharts();
+            if (tabId === 'figure4') {
+                initializeF4Plots();
             }
         });
     });
 }
 
+// =============================================================================
 // Initialize on page load
-document.addEventListener('DOMContentLoaded', () => {
-    new STDPSimulation();
-    figure4Sim = new Figure4Simulation();
+// =============================================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializePlots();
     setupTabs();
+
+    // Bind event listeners
+    document.getElementById('runCondition1').addEventListener('click', function() { runCondition(1); });
+    document.getElementById('runCondition2').addEventListener('click', function() { runCondition(2); });
+    document.getElementById('runCondition3').addEventListener('click', function() { runCondition(3); });
+    document.getElementById('stopSimulation').addEventListener('click', stopSimulation);
+
+    document.getElementById('runFigure4').addEventListener('click', runFigure4);
+    document.getElementById('stopFigure4').addEventListener('click', stopFigure4);
 });
