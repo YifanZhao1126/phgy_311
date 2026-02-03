@@ -21,7 +21,7 @@ var layout1 = {
     },
     yaxis: {
         title: '<b>g/g<sub>max</sub></b>',
-        range: [-0.05, 1.05],
+        range: [0, 1],
         zeroline: false
     },
     autosize: true,
@@ -38,7 +38,7 @@ var layout2 = {
     },
     yaxis: {
         title: '<b>g/g<sub>max</sub></b>',
-        range: [-0.05, 1.05],
+        range: [0, 1],
         zeroline: false
     },
     autosize: true,
@@ -55,7 +55,7 @@ var layout3 = {
     },
     yaxis: {
         title: '<b>g/g<sub>max</sub></b>',
-        range: [-0.05, 1.05],
+        range: [0, 1],
         zeroline: false
     },
     autosize: true,
