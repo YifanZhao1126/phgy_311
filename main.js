@@ -20,7 +20,7 @@ var layout1 = {
         zeroline: false
     },
     yaxis: {
-        title: '<b>Synaptic Strength g/g<sub>max</sub></b>',
+        title: '<b>Synaptic Strength<br>g/g<sub>max</sub></b>',
         range: [0, 1],
         zeroline: false
     },
@@ -37,7 +37,7 @@ var layout2 = {
         zeroline: false
     },
     yaxis: {
-        title: '<b>Synaptic Strength g/g<sub>max</sub></b>',
+        title: '<b>Synaptic Strength<br>g/g<sub>max</sub></b>',
         range: [0, 1],
         zeroline: false
     },
@@ -54,7 +54,7 @@ var layout3 = {
         zeroline: false
     },
     yaxis: {
-        title: '<b>Synaptic Strength g/g<sub>max</sub></b>',
+        title: '<b>Synaptic Strength<br>g/g<sub>max</sub></b>',
         range: [0, 1],
         zeroline: false
     },
