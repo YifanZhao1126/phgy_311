@@ -185,7 +185,8 @@ function initializePlots() {
         marker: {
             color: 'rgb(0, 0, 0)',
             size: 6
-        }
+        },
+        cliponaxis: false
     };
 
     Plotly.newPlot('condition1Chart', [emptyTrace], layout1, config);
@@ -326,7 +327,8 @@ function initializeF4Plots() {
         marker: {
             color: 'rgb(0, 0, 0)',
             size: 4
-        }
+        },
+        cliponaxis: false
     };
 
     var emptyLine = {
