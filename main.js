@@ -90,7 +90,7 @@ var layoutF4InitWeights = {
         zeroline: false
     },
     yaxis: {
-        title: '<b>g/g<sub>max</sub></b>',
+        title: '<b>Synaptic Strength<br>g/g<sub>max</sub></b>',
         range: [0, 1],
         zeroline: false
     },
@@ -124,7 +124,7 @@ var layoutF4CurrWeights = {
         zeroline: false
     },
     yaxis: {
-        title: '<b>g/g<sub>max</sub></b>',
+        title: '<b>Synaptic Strength<br>g/g<sub>max</sub></b>',
         range: [0, 1],
         zeroline: false
     },
