@@ -1,5 +1,6 @@
 function g = simSTDP(corri, corr_time, N, tau_ltp, tau_ltd, A_ltp, A_ltd, gmax, tau_ex, Vrest, Eex, tau_m, Vth, stime, yConst)
 
+    rng('shuffle');
     V = Vrest;
     dt = 1; %integration timestep (ms)
     

@@ -2,6 +2,7 @@ function g = simSTDPlatencies(lat, burstdur, burstrate, N, tau_ltp, tau_ltd, A_l
 
     %V = Vrest;
     dt = 1; %integration timestep (ms)
+    rng('shuffle');
     g = ones(N,1).*0.003;
     x = zeros(N,1); %Presynaptic traces (STDP online implementation)
     y = 0; %Postsynaptic traces (STDP online implementation)   

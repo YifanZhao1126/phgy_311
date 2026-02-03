@@ -1,5 +1,6 @@
 function g = simSTDP2(corri, corr_time, N, tau_ltp, tau_ltd, A_ltp, A_ltd, gmax, tau_ex, Vrest, Eex, tau_m, Vth, stime, yConst)
 
+    rng('shuffle');
     % The switch between clusters is determined by the variable dur, 
     % so that when there are two clusters competing only one of them 
     % is "correlated" within a given dur (this is controled by the variable c)
