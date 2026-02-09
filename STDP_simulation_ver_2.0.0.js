@@ -575,10 +575,10 @@ var isRunning = false;
 function getParameters() {
     return {
         N: parseInt(document.getElementById('N').value),
-        tau_ltp: parseFloat(document.getElementById('tau_ltp').value),
-        tau_ltd: parseFloat(document.getElementById('tau_ltp').value),
-        A_ltp: parseFloat(document.getElementById('A_ltp').value),
-        A_ltd: parseFloat(document.getElementById('A_ltp').value) * parseFloat(document.getElementById('B').value),
+        tau_ltp: 20,
+        tau_ltd: 20,
+        A_ltp: 0.005,
+        A_ltd: 0.005 * parseFloat(document.getElementById('B').value),
         gmax: parseFloat(document.getElementById('gmax').value),
         Vrest: -74,
         Vth: -54,
