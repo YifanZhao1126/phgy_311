@@ -574,7 +574,7 @@ var isRunning = false;
 
 function getParameters() {
     return {
-        N: parseInt(document.getElementById('N').value),
+        N: 100,
         tau_ltp: 20,
         tau_ltd: 20,
         A_ltp: 0.005,
