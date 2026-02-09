@@ -579,7 +579,7 @@ function getParameters() {
         tau_ltd: 20,
         A_ltp: 0.005,
         A_ltd: 0.005 * parseFloat(document.getElementById('B').value),
-        gmax: parseFloat(document.getElementById('gmax').value),
+        gmax: 0.75,
         Vrest: -74,
         Vth: -54,
         tau_m: 20,
