@@ -580,12 +580,12 @@ function getParameters() {
         A_ltp: parseFloat(document.getElementById('A_ltp').value),
         A_ltd: parseFloat(document.getElementById('A_ltp').value) * parseFloat(document.getElementById('B').value),
         gmax: parseFloat(document.getElementById('gmax').value),
-        Vrest: parseFloat(document.getElementById('Vrest').value),
-        Vth: parseFloat(document.getElementById('Vth').value),
-        tau_m: parseFloat(document.getElementById('tau_m').value),
+        Vrest: -74,
+        Vth: -54,
+        tau_m: 20,
         stime: parseInt(document.getElementById('stime').value),
-        tau_ex: parseFloat(document.getElementById('tau_ex').value),
-        Eex: parseFloat(document.getElementById('Eex').value),
+        tau_ex: 5,
+        Eex: 0,
         corr_time: parseFloat(document.getElementById('corr_time').value),
         yConst: parseFloat(document.getElementById('yConst').value)
     };
