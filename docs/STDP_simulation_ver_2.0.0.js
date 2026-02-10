@@ -963,11 +963,23 @@ document.addEventListener('DOMContentLoaded', function() {
     initializePlots();
     setupTabs();
 
+    // Reset parameters function
+    function resetParameters() {
+        // Figure 1 parameters
+        document.getElementById('B').value = '1.05';
+        document.getElementById('stime').value = '500000';
+        document.getElementById('corr_time').value = '20';
+        document.getElementById('yConst').value = '2';
+
+        document.getElementById('status').textContent = 'Parameters reset to defaults';
+    }
+
     // Bind event listeners
     document.getElementById('runCondition1').addEventListener('click', function() { runCondition(1); });
     document.getElementById('runCondition2').addEventListener('click', function() { runCondition(2); });
     document.getElementById('runCondition3').addEventListener('click', function() { runCondition(3); });
     document.getElementById('stopSimulation').addEventListener('click', stopSimulation);
+    document.getElementById('resetParams').addEventListener('click', resetParameters);
 
     document.getElementById('runFigure4').addEventListener('click', runFigure4);
     document.getElementById('stopFigure4').addEventListener('click', stopFigure4);
