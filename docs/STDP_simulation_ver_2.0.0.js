@@ -502,7 +502,7 @@ var layoutCorrelation = {
     paper_bgcolor: '#c7c7c7',
     showlegend: true,
     legend: {
-        x: 0.5,
+        x: 0.6,
         y: 0.95,
         font: {size: 9}
     }
