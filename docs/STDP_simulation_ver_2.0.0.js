@@ -584,6 +584,10 @@ var layoutF4CurrVoltage = {
 // FIGURE 1: Input Selectivity Simulation
 // =============================================================================
 
+// Detect mobile devices
+var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+var updateDelay = isMobile ? 50 : 5;  // Longer delay on mobile for smoother animation
+
 var isRunning = false;
 
 function getParameters() {
@@ -757,7 +761,7 @@ async function runCondition(conditionNumber) {
 
             updateConditionPlot(conditionNumber, weights);
 
-            await new Promise(function(resolve) { setTimeout(resolve, 5); });
+            await new Promise(function(resolve) { setTimeout(resolve, updateDelay); });
         };
 
         var finalWeights = await runSelectivitySimulation(conditionNumber, params, onProgress);
@@ -903,7 +907,7 @@ async function runFigure4() {
                 y: [voltage]
             }, [0]);
 
-            await new Promise(function(resolve) { setTimeout(resolve, 1); });
+            await new Promise(function(resolve) { setTimeout(resolve, updateDelay); });
         };
 
         var result = await runLatencySimulation(params, onProgress);
