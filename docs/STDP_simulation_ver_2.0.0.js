@@ -479,19 +479,33 @@ var layout3 = {
     showlegend: false
 };
 
-var layoutHist = {
-    title: '<b>Weight Distribution</b>',
+var layoutCorrelation = {
+    title: '<b>E   Input-Output Correlation</b>',
     xaxis: {
-        title: '<b>g/g<sub>max</sub></b>',
-        zeroline: false
+        title: '<b>t<sub>pre</sub> - t<sub>post</sub> (ms)</b>',
+        zeroline: true,
+        range: [-100, 100]
     },
     yaxis: {
-        title: '<b>Count</b>',
-        zeroline: false
+        title: '<b>Relative probability</b>',
+        zeroline: false,
+        range: [0.95, 1.45]
+    },
+    yaxis2: {
+        title: '<b>F(Δt)</b>',
+        overlaying: 'y',
+        side: 'right',
+        zeroline: true,
+        range: [-0.006, 0.006]
     },
     autosize: true,
     paper_bgcolor: '#c7c7c7',
-    showlegend: false
+    showlegend: true,
+    legend: {
+        x: 0.7,
+        y: 0.95,
+        font: {size: 9}
+    }
 };
 
 // =============================================================================
@@ -609,20 +623,90 @@ function initializePlots() {
     Plotly.newPlot('condition2Chart', [emptyTrace], layout2, config);
     Plotly.newPlot('condition3Chart', [emptyTrace], layout3, config);
 
-    // Initialize empty histogram
-    var emptyHist = {
-        x: [],
-        type: 'histogram',
-        marker: {
-            color: 'rgba(0, 0, 0, 0.7)'
-        },
-        xbins: {
-            start: 0,
-            end: 1,
-            size: 0.1
+    // Initialize Panel E: Input-Output Correlation
+    // Generate correlation function
+    var t = [];
+    var corr = [];
+    var stdp = [];
+    var tau_c = 20.0;
+    var tau_plus = 20.0;
+    var A_plus = 0.005;
+    var A_minus = 0.005 * 1.05;
+
+    for (var i = 0; i <= 500; i++) {
+        var time = -100 + (200 * i / 500);
+        t.push(time);
+
+        // Correlation curve: 1 + 0.35 * exp(-|t| / tau_c)
+        var corr_val = 1.0 + 0.35 * Math.exp(-Math.abs(time) / tau_c);
+
+        // Add causal bias for t < 0
+        if (time < 0) {
+            corr_val += 0.08 * Math.exp(time / tau_c);
         }
+        corr.push(corr_val);
+
+        // STDP window
+        var stdp_val;
+        if (time < 0) {
+            stdp_val = A_plus * Math.exp(time / tau_plus);
+        } else {
+            stdp_val = -A_minus * Math.exp(-time / tau_plus);
+        }
+        stdp.push(stdp_val);
+    }
+
+    // Shaded region (Pre->Post bias)
+    var shaded_t = [];
+    var shaded_corr = [];
+    var shaded_baseline = [];
+    for (var i = 0; i <= 500; i++) {
+        var time = -100 + (200 * i / 500);
+        if (time < 0) {
+            shaded_t.push(time);
+            var corr_val = 1.0 + 0.35 * Math.exp(-Math.abs(time) / tau_c);
+            corr_val += 0.08 * Math.exp(time / tau_c);
+            shaded_corr.push(corr_val);
+            shaded_baseline.push(1.0);
+        }
+    }
+
+    var traceShaded = {
+        x: shaded_t,
+        y: shaded_corr,
+        fill: 'tonexty',
+        fillcolor: 'rgba(128, 128, 128, 0.2)',
+        line: {color: 'transparent'},
+        showlegend: false,
+        hoverinfo: 'skip'
     };
-    Plotly.newPlot('histogramChart', [emptyHist], layoutHist, config);
+
+    var traceBaseline = {
+        x: shaded_t,
+        y: shaded_baseline,
+        line: {color: 'transparent'},
+        showlegend: false,
+        hoverinfo: 'skip'
+    };
+
+    var traceCorr = {
+        x: t,
+        y: corr,
+        mode: 'lines',
+        line: {color: 'black', width: 2},
+        name: 'Input-output correlation'
+    };
+
+    var traceSTDP = {
+        x: t,
+        y: stdp,
+        mode: 'lines',
+        line: {color: 'black', width: 1, dash: 'dash'},
+        name: 'STDP window F(Δt)',
+        yaxis: 'y2'
+    };
+
+    Plotly.newPlot('histogramChart', [traceBaseline, traceShaded, traceCorr, traceSTDP], layoutCorrelation, config);
 }
 
 function updateConditionPlot(conditionNumber, weights) {
@@ -642,10 +726,8 @@ function updateConditionPlot(conditionNumber, weights) {
 }
 
 function updateHistogram(weights) {
-    // Use restyle for smoother updates
-    Plotly.restyle('histogramChart', {
-        x: [weights]
-    }, [0]);
+    // Panel E is now a static correlation plot, no updates needed
+    // This function is kept for compatibility but does nothing
 }
 
 async function runCondition(conditionNumber) {

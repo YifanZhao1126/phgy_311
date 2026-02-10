@@ -8,7 +8,7 @@ format compact
 
 %0. Parameters
 %Network Parameters
- N = 100; %number of neurons
+ N = 1000; %number of neurons
  
  %STDP Parameters
  B = 1.05; %(tau_ltd*A_ltd)/(tau_ltp*A_ltp)
