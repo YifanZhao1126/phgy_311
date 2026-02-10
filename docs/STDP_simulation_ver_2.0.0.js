@@ -318,7 +318,7 @@ async function runLatencySimulation(params, onProgress) {
     }
 
     // Initialize all weights equally
-    const g = new Array(params.N).fill(0.003);
+    const g = new Array(params.N).fill(params.g_init);
 
     // Spike probability during burst
     const firingp = 1 - Math.exp(-params.burstrate * 0.001);
@@ -795,21 +795,25 @@ var f4_chartsInitialized = false;
 
 function getF4Parameters() {
     return {
-        N: parseInt(document.getElementById('f4_N').value),
-        tau_ltp: parseFloat(document.getElementById('f4_tau_ltp').value),
-        tau_ltd: parseFloat(document.getElementById('f4_tau_ltp').value),
-        A_ltp: parseFloat(document.getElementById('f4_A_ltp').value),
-        A_ltd: parseFloat(document.getElementById('f4_A_ltp').value) * parseFloat(document.getElementById('f4_B').value),
+        // User-adjustable parameters
+        g_init: parseFloat(document.getElementById('f4_g_init').value),
         gmax: parseFloat(document.getElementById('f4_gmax').value),
-        Vrest: parseFloat(document.getElementById('f4_Vrest').value),
-        Vth: parseFloat(document.getElementById('f4_Vth').value),
-        tau_m: parseFloat(document.getElementById('f4_tau_m').value),
-        tau_ex: parseFloat(document.getElementById('f4_tau_ex').value),
-        Eex: parseFloat(document.getElementById('f4_Eex').value),
         ttimes: parseInt(document.getElementById('f4_ttimes').value),
         latency_std: parseFloat(document.getElementById('f4_latency_std').value),
-        burstdur: parseFloat(document.getElementById('f4_burstdur').value),
-        burstrate: parseFloat(document.getElementById('f4_burstrate').value)
+        burstrate: parseFloat(document.getElementById('f4_burstrate').value),
+
+        // Hardcoded parameters (fixed for pedagogical clarity)
+        N: 1000,
+        tau_ltp: 20,
+        tau_ltd: 20,
+        A_ltp: 0.005,
+        A_ltd: 0.005 * 1.05,
+        Vrest: -74,
+        Vth: -54,
+        tau_m: 20,
+        tau_ex: 5,
+        Eex: 0,
+        burstdur: 20
     };
 }
 
@@ -868,7 +872,7 @@ async function runFigure4() {
             if (trial === 100) {
                 Plotly.restyle('f4_initialWeights', {
                     x: [latencies],
-                    y: [new Array(latencies.length).fill(0.003 / params.gmax)]
+                    y: [new Array(latencies.length).fill(params.g_init / params.gmax)]
                 }, [0]);
 
                 if (initialVoltage) {
@@ -963,7 +967,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializePlots();
     setupTabs();
 
-    // Reset parameters function
+    // Reset parameters function for Figure 1
     function resetParameters() {
         // Figure 1 parameters
         document.getElementById('B').value = '1.05';
@@ -972,6 +976,18 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('yConst').value = '2';
 
         document.getElementById('status').textContent = 'Parameters reset to defaults';
+    }
+
+    // Reset parameters function for Figure 4
+    function resetParametersF4() {
+        // Figure 4 parameters
+        document.getElementById('f4_g_init').value = '0.003';
+        document.getElementById('f4_gmax').value = '0.015';
+        document.getElementById('f4_ttimes').value = '2000';
+        document.getElementById('f4_latency_std').value = '15';
+        document.getElementById('f4_burstrate').value = '100';
+
+        document.getElementById('f4_status').textContent = 'Parameters reset to defaults';
     }
 
     // Bind event listeners
@@ -983,4 +999,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('runFigure4').addEventListener('click', runFigure4);
     document.getElementById('stopFigure4').addEventListener('click', stopFigure4);
+    document.getElementById('resetParamsF4').addEventListener('click', resetParametersF4);
 });
