@@ -229,15 +229,6 @@ button:disabled {
     height: 100%;
     background-color: #26A69A;
     transition: width 0.3s ease;
-    will-change: width;
-    transform: translateZ(0); /* Force hardware acceleration */
-}
-
-/* Disable transition on mobile for smoother progress bar updates */
-@media (max-width: 768px) {
-    .progress-bar {
-        transition: none;
-    }
 }
 
 .status {
