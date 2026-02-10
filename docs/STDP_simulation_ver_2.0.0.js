@@ -480,7 +480,7 @@ var layout3 = {
 };
 
 var layoutCorrelation = {
-    title: '<b>E   Input-Output Correlation</b>',
+    title: '<b>Input-Output Correlation</b>',
     xaxis: {
         title: '<b>t<sub>pre</sub> - t<sub>post</sub> (ms)</b>',
         zeroline: true,
@@ -502,7 +502,7 @@ var layoutCorrelation = {
     paper_bgcolor: '#c7c7c7',
     showlegend: true,
     legend: {
-        x: 0.7,
+        x: 0.5,
         y: 0.95,
         font: {size: 9}
     }
