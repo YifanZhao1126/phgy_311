@@ -753,7 +753,7 @@ async function runCondition(conditionNumber) {
 
             var progress = (t / total) * 100;
             document.getElementById('progressBar').style.width = progress + '%';
-            document.getElementById('status').textContent = conditionNames[conditionNumber] + ': ' + Math.round(progress) + '%';
+            document.getElementById('status').textContent = conditionNames[conditionNumber] + ': t = ' + t + ' / ' + total + ' ms';
 
             updateConditionPlot(conditionNumber, weights);
 
