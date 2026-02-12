@@ -663,6 +663,14 @@ async function runCondition(conditionNumber) {
 
     document.getElementById('status').textContent = 'Running ' + conditionNames[conditionNumber] + '...';
 
+    // Reset progress bar instantly (disable transition so it doesn't animate backwards)
+    var progressBar = document.getElementById('progressBar');
+    progressBar.style.transition = 'none';
+    progressBar.style.width = '0%';
+    // Force reflow, then re-enable transition
+    progressBar.offsetWidth;
+    progressBar.style.transition = 'width 0.3s ease';
+
     var params = getParameters();
 
     try {
