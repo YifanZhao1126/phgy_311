@@ -675,7 +675,7 @@ async function runCondition(conditionNumber) {
 
             updateConditionPlot(conditionNumber, weights);
 
-            await new Promise(function(resolve) { setTimeout(resolve, 10); });
+            await new Promise(function(resolve) { setTimeout(resolve, 50); });
         };
 
         var finalWeights = await runSelectivitySimulation(conditionNumber, params, onProgress);
