@@ -278,8 +278,8 @@ async function runSelectivitySimulation(conditionNumber, params, onProgress) {
             g[i] = Math.max(Math.min(g[i], params.gmax), 0);
         }
 
-        // Progress callback (every 10000 ms for UI updates)
-        if (onProgress && t % 10000 === 0) {
+        // Progress callback (every 5000 ms for UI updates)
+        if (onProgress && t % 5000 === 0) {
             const normalizedWeights = g.map(w => w / params.gmax);
             await onProgress(t, params.stime, normalizedWeights);
         }
@@ -757,7 +757,7 @@ async function runCondition(conditionNumber) {
 
             updateConditionPlot(conditionNumber, weights);
 
-            await new Promise(function(resolve) { setTimeout(resolve, 5); });
+            await new Promise(function(resolve) { setTimeout(resolve, 10); });
         };
 
         var finalWeights = await runSelectivitySimulation(conditionNumber, params, onProgress);
